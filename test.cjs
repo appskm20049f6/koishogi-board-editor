@@ -1,0 +1,14 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const html=fs.readFileSync(__dirname+'/index.html','utf8');
+const script=html.match(/<script>([\s\S]*)<\/script>/)[1];
+new vm.Script(script);
+const core=script.slice(script.indexOf('(function(root){'),script.indexOf("})(typeof window!=='undefined'?window:globalThis);")+"})(typeof window!=='undefined'?window:globalThis);".length);
+const sandbox={module:{exports:{}}};vm.runInNewContext(core,sandbox);const S=sandbox.module.exports;
+const opening='手合割：平手\n先手：測試先手\n後手：測試後手\n1 ７六歩(77)\n2 ３四歩(33)\n3 ２二角成(88)\n4 同　銀(31)\n5 ４五角打\n6 投了';
+const r=S.parse(opening);assert.equal(r.positions.length,6);assert.equal(r.result,'投了');assert.equal(S.at(r.positions[3],{f:2,r:2}).k,'馬');assert.equal(r.positions[4].hands[1]['角'],1);assert.equal(r.positions[5].hands[0]['角'],0);assert.equal(S.at(r.positions[5],{f:4,r:5}).k,'角');assert.equal(r.positions[0].hands[0]['角'],undefined);
+assert.throws(()=>S.parse('先手の持駒：歩\n1 ７六歩(77)\n2 ３四歩(33)\n3 ２二角(88)\n4 同銀(31)\n5 ７五歩打'),/兩枚/);
+assert.throws(()=>S.parse('1 ７五歩(77)'),/不能/);assert.throws(()=>S.parse('1 ７六歩(77)\n3 ３四歩(33)'),/不連續/);assert.throws(()=>S.parse('not a record'),/沒有找到/);assert.throws(()=>S.parse('1 ７六歩'),/起點座標/);
+const h=S.parse('手合割：二枚落ち\n1 ６二銀(71)');assert.equal(h.positions[0].pieces.length,38);assert.equal(h.positions[1].turn,'先手下');
+const initial=r.positions[0];assert.equal(S.legal(initial,{f:8,r:8,k:'角',side:0},{f:2,r:2}).length>0,true);assert.equal(S.forced('桂',0,2),true);assert.equal(S.forced('桂',1,8),true);assert.equal(S.forced('歩',1,9),true);assert.equal(S.zone(1,7),true);
+const check={...S.copy(initial),pieces:[{f:5,r:9,k:'玉',side:0},{f:5,r:8,k:'金',side:0},{f:5,r:1,k:'飛',side:1}]};assert.match(S.legal(check,check.pieces[1],{f:4,r:8}),/將軍/);
+console.log('PASS: embedded script, KIF, captures, drops, promotion, validation and king safety');

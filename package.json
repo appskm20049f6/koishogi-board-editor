@@ -1,0 +1,9 @@
+{
+  "name": "koishogi-board-editor",
+  "version": "0.1.0",
+  "private": true,
+  "description": "KOISHOGI 教材棋盤與 KIF 閱讀工具",
+  "scripts": {
+    "test": "node test.cjs"
+  }
+}
